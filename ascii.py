@@ -71,13 +71,17 @@ def to_image(text, font, invert, spacing):
     draw.multiline_text((0, 0), text, font=font, fill=0 if invert else 255, spacing=spacing)
     return im
 
-def full_convert(im, *, invert, font, spacing, charset, out_text, dither):
+def full_convert(im, *, invert, font, spacing, charset, out_text, dither, in_scale, out_scale):
+    width, height = im.size
+    scaled_im = im.resize((int(width * in_scale), int(height * in_scale)))
     mapping, (fx, fy) = make_mapping(charset, font, invert)
-    text = convert(im, mapping, (fy + spacing) / fx, dither)
+    text = convert(scaled_im, mapping, (fy + spacing) / fx, dither)
     if out_text:
         return text
     else:
-        return to_image(text, font, invert, spacing)
+        out_im = to_image(text, font, invert, spacing)
+        out_width, out_height = out_im.size
+        return out_im.resize((int(out_width * out_scale), int(out_height * out_scale)), Image.BILINEAR)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert an image or sequence of images to text.")
@@ -87,14 +91,13 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--font", default=DEFAULT_FONT, help="The font to target. Defaults to Consolas.")
     parser.add_argument("-s", "--spacing", default=0, type=int, help="The line spacing, in pixels, to target. Defaults to 0.")
     parser.add_argument("-c", "--charset", default=DEFAULT_CHARS, help="The set of valid characters to use. Defaults to printable ASCII.")
-    parser.add_argument("-r", "--resize", nargs=2, type=int, default=None, help="The resolution to resize the image to. Defaults to no resizing.")
+    parser.add_argument("-is", "--in-scale", type=float, default=1, help="Factor to scale the input image by. Defaults to 1.")
+    parser.add_argument("-os", "--out-scale", type=float, default=1, help="Factor to scale the output image by. Does nothing if the --text flag is passed. Defaults to 1.")
     parser.add_argument("-t", "--text", action="store_true", help="Output a text file.")
     parser.add_argument("-nd", "--no-dither", action="store_true", help="Don't apply dithering to the output.")
     args = parser.parse_args()
 
     im = Image.open(args.input_file)
-    if args.resize:
-        im = im.resize(args.resize)
 
     r = full_convert(
         im,
@@ -103,7 +106,9 @@ if __name__ == "__main__":
         spacing=args.spacing,
         charset=args.charset,
         out_text=args.text,
-        dither=not args.no_dither
+        dither=not args.no_dither,
+        in_scale=args.in_scale,
+        out_scale=args.out_scale
     )
 
     if args.text:

@@ -52,6 +52,7 @@ async def update(ctx):
 @bot.group(name="ascii", invoke_without_command=True)
 async def _ascii(
     ctx,
+    in_scale: Optional[float] = 1, out_scale: Optional[float] = 1,
     dither: Optional[bool] = True,
     invert: Optional[bool] = False,
     url=None, font="Consolas",
@@ -79,7 +80,9 @@ async def _ascii(
          spacing=0,
          charset=charset,
          out_text=False,
-         dither=dither
+         dither=dither,
+         in_scale=in_scale,
+         out_scale=out_scale
     ))
     result.save(out_image, format="png")
     out_image.seek(0)
