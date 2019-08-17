@@ -5,6 +5,7 @@ import functools
 import subprocess
 import traceback
 import io
+import os
 import string
 import sys
 
@@ -12,6 +13,8 @@ from discord.ext import commands
 from typing import Optional
 from PIL import Image
 
+
+os.chdir(os.path.dirname(__file__))
 
 bot = commands.Bot(command_prefix="@")
 
