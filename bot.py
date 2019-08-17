@@ -14,7 +14,8 @@ from typing import Optional
 from PIL import Image
 
 
-os.chdir(os.path.dirname(__file__))
+if not os.getcwd().endswith("ASCIIpy"):
+    os.chdir(os.path.dirname(__file__))
 
 bot = commands.Bot(command_prefix="@")
 
@@ -48,7 +49,7 @@ async def update(ctx):
     await ctx.bot.close()
     await bot.session.close()
 
-@bot.command(name="ascii")
+@bot.group(name="ascii", invoke_without_command=True)
 async def _ascii(
     ctx,
     dither: Optional[bool] = True,
@@ -81,6 +82,14 @@ async def _ascii(
     result.save(out_image, format="png")
     out_image.seek(0)
     await ctx.send(file=discord.File(out_image, "result.png"))
+
+@_ascii.group()
+async def fonts(ctx):
+    out = subprocess.check_output(["fc-list", ":mono"]).decode()
+    font = set()
+    for ln in out.splitlines():
+        font.add(ln.split(":")[1].strip())
+    await ctx.send(embed=discord.Embed(description="\n".join(font)))
 
 
 with open("token.txt") as f:
