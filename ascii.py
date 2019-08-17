@@ -19,15 +19,17 @@ def get_font(font_name):
         print("WARNING: Font name may be misspelled.")
     return ImageFont.truetype(filename, 12)
 
+def get_size(text, font, spacing=0):
+    return ImageDraw.Draw(Image.new("1", (0, 0))).multiline_textsize(text, font=font, spacing=spacing)
+
 def make_mapping(charset, font, invert):
     float_mapping = {}
     for char in charset:
-        x, y = font.getsize(char)
-        if y > 11:
-            continue
-        im = Image.new("L", (x, y), color=255 if invert else 0)
+        x, y = get_size(char, font)
+        im = Image.new("L", (x, y * 3), color=255 if invert else 0)
         draw = ImageDraw.Draw(im)
-        draw.text((0, 0), char, font=font, fill=0 if invert else 255)
+        draw.text((0, 0), " \n" + char, font=font, fill=0 if invert else 255, spacing=0)
+        im = im.crop((0, y + 1, x, y * 2 + 1))
         avg = math.sqrt(sum(x ** 2 for x in im.getdata()) / (x * y))
         float_mapping[avg] = char
     mn, mx = min(float_mapping), max(float_mapping)
@@ -62,6 +64,21 @@ def convert(im, mapping, ratio, dither):
         text[-1].extend([char] * int(chars))
     return "\n".join("".join(l) for l in text)
 
+def to_image(text, font, invert, spacing):
+    size = get_size(text, font, spacing)
+    im = Image.new("L", size, color=255 if invert else 0)
+    draw = ImageDraw.Draw(im)
+    draw.multiline_text((0, 0), text, font=font, fill=0 if invert else 255, spacing=spacing)
+    return im
+
+def full_convert(im, *, invert, font, spacing, charset, out_text, dither):
+    mapping, (fx, fy) = make_mapping(charset, font, invert)
+    text = convert(im, mapping, (fy + spacing) / fx, dither)
+    if out_text:
+        return text
+    else:
+        return to_image(text, font, invert, spacing)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert an image or sequence of images to text.")
     parser.add_argument("input_file", help="Image to convert to ASCII.")
@@ -74,24 +91,23 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--text", action="store_true", help="Output a text file.")
     parser.add_argument("-nd", "--no-dither", action="store_true", help="Don't apply dithering to the output.")
     args = parser.parse_args()
-    
-    print("Generating mapping...")
-    font = get_font(args.font)
-    mapping, (fx, fy) = make_mapping(args.charset, font, args.invert)
 
-    print("Performing conversion...")
     im = Image.open(args.input_file)
     if args.resize:
         im = im.resize(args.resize)
-    text = convert(im, mapping, (fy + args.spacing) / fx, not args.no_dither)
+
+    r = full_convert(
+        im,
+        invert=args.invert,
+        font=get_font(args.font),
+        spacing=args.spacing,
+        charset=args.charset,
+        out_text=args.text,
+        dither=not args.no_dither
+    )
 
     if args.text:
         with open(args.output_file, "w") as f:
-            f.write(text)
+            f.write(r)
     else:
-        print("Converting to image...")
-        size = ImageDraw.Draw(Image.new("1", (0, 0))).multiline_textsize(text, font=font, spacing=args.spacing)
-        im = Image.new("L", size, color=255 if args.invert else 0)
-        draw = ImageDraw.Draw(im)
-        draw.multiline_text((0, 0), text, font=font, fill=0 if args.invert else 255, spacing=args.spacing)
-        im.save(args.output_file)
+        r.save(args.output_file)
