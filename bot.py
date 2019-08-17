@@ -3,8 +3,10 @@ import aiohttp
 import discord
 import functools
 import subprocess
+import traceback
 import io
 import string
+import sys
 
 from discord.ext import commands
 from typing import Optional
@@ -20,6 +22,21 @@ async def on_ready():
     print(f"Ready on {bot.user}")
     print(f"ID: {bot.user.id}")
     print("---")
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.UserInputError):
+        await ctx.send("You messed up writing the command.")
+    elif isinstance(error, commands.CommandNotFound):
+        pass
+    else:
+        if hasattr(error, "original"):
+            error = error.original
+        await ctx.send(discord.utils.escape_mentions(
+             f"Something went wrong. ``{type(error).__name__}: {discord.utils.escape_markdown(str(error))}``"
+        ))
+        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 @bot.command()
 @commands.is_owner()
@@ -37,16 +54,17 @@ async def _ascii(
     *, charset=string.ascii_letters + string.punctuation + string.digits + " "
 ):
     font = ascii.get_font(font)
-    if url:
-        async with bot.session.get(url) as resp:
-            image = Image.open(io.BytesIO(await resp.read()))
-    elif ctx.message.attachments:
+    if ctx.message.attachments:
         attachment = ctx.message.attachments[0]
         image = Image.open(io.BytesIO(await attachment.read()))
+    elif url:
+        async with bot.session.get(url) as resp:
+            image = Image.open(io.BytesIO(await resp.read()))
     else:
         return await ctx.send("You forgot the image.")
 
     out_image = io.BytesIO()
+    await ctx.send("Performing conversion...")
     result = await bot.loop.run_in_executor(None, functools.partial(
          ascii.full_convert,
          image,
