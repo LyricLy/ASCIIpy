@@ -1,0 +1,7 @@
+*.png
+*.jpg
+*.jpeg
+*.txt
+.*
+!.gitignore
+__pycache__
