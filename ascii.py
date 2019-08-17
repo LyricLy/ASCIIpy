@@ -16,7 +16,7 @@ DEFAULT_FONT = "Consolas"
 def get_font(font_name):
     filename = subprocess.check_output(["fc-match", font_name]).decode().split(":")[0]
     if filename == "arial.ttf" and font_name.lower() not in ("arial", "sans-serif"):
-        print("WARNING: Font name may be misspelled.")
+        return None
     return ImageFont.truetype(filename, 12)
 
 def get_size(text, font, spacing=0):

@@ -58,6 +58,8 @@ async def _ascii(
     *, charset=string.ascii_letters + string.punctuation + string.digits + " "
 ):
     font = ascii.get_font(font)
+    if not font:
+        await ctx.send("Invalid font.")
     if ctx.message.attachments:
         attachment = ctx.message.attachments[0]
         image = Image.open(io.BytesIO(await attachment.read()))
