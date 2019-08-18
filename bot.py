@@ -55,6 +55,7 @@ async def _ascii(
     in_scale: Optional[float] = 1, out_scale: Optional[float] = 1,
     dither: Optional[bool] = True,
     invert: Optional[bool] = False,
+    out_text: Optional[bool] = False,
     url=None, font="Consolas",
     *, charset=string.ascii_letters + string.punctuation + string.digits + " "
 ):
@@ -63,14 +64,17 @@ async def _ascii(
         await ctx.send("Invalid font.")
     if ctx.message.attachments:
         attachment = ctx.message.attachments[0]
-        image = Image.open(io.BytesIO(await attachment.read()))
+        data = await attachment.read()
+        filename = attachment.filename
     elif url:
         async with bot.session.get(url) as resp:
-            image = Image.open(io.BytesIO(await resp.read()))
+            data = await resp.read()
+        filename = url.split("?", 1)[0].rsplit("/", 1)[1]
     else:
         return await ctx.send("You forgot the image.")
 
-    out_image = io.BytesIO()
+    image = Image.open(io.BytesIO(data))
+
     await ctx.send("Performing conversion...")
     result = await bot.loop.run_in_executor(None, functools.partial(
          ascii.full_convert,
@@ -79,14 +83,19 @@ async def _ascii(
          font=font,
          spacing=0,
          charset=charset,
-         out_text=False,
+         out_text=out_text,
          dither=dither,
          in_scale=in_scale,
          out_scale=out_scale
     ))
-    result.save(out_image, format="png")
-    out_image.seek(0)
-    await ctx.send(file=discord.File(out_image, "result.png"))
+
+    if out_text:
+        await ctx.send(file=discord.File(io.BytesIO(result.encode()), filename + ".txt"))
+    else:
+        out_image = io.BytesIO()
+        result.save(out_image, format="png")
+        out_image.seek(0)
+        await ctx.send(file=discord.File(out_image, filename))
 
 @_ascii.group()
 async def fonts(ctx):
