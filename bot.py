@@ -49,7 +49,7 @@ async def update(ctx):
     await ctx.bot.close()
     await bot.session.close()
 
-@bot.command
+@bot.command()
 async def owner(ctx):
     await ctx.send("LyricLy made this bot. Shower him with praise!")
 
