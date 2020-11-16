@@ -99,6 +99,8 @@ async def _ascii(
         out_image = io.BytesIO()
         result.save(out_image, format="png")
         out_image.seek(0)
+        if not filename.endswith(".png"):
+            filename = "output.png"
         await ctx.send(file=discord.File(out_image, filename))
 
 @_ascii.group()
