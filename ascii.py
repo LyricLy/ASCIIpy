@@ -3,14 +3,13 @@
 import argparse
 import subprocess
 import string
-import math
 
 from collections import defaultdict
 from PIL import Image, ImageDraw, ImageFont
 
 
 DEFAULT_CHARS = string.ascii_letters + string.digits + string.punctuation + " "
-DEFAULT_FONT = "Consolas"
+DEFAULT_FONT = "Inconsolata"
 
 
 def get_font(font_name):
@@ -26,11 +25,12 @@ def make_mapping(charset, font, invert):
     float_mapping = {}
     for char in charset:
         x, y = get_size(char, font)
+
         im = Image.new("L", (x, y * 3), color=255 if invert else 0)
         draw = ImageDraw.Draw(im)
         draw.text((0, 0), " \n" + char, font=font, fill=0 if invert else 255, spacing=0)
         im = im.crop((0, y + 1, x, y * 2 + 1))
-        avg = math.sqrt(sum(x ** 2 for x in im.getdata()) / (x * y))
+        avg = sum(im.getdata()) ** 0.5
         float_mapping[avg] = char
     mn, mx = min(float_mapping), max(float_mapping)
     mapping = []
@@ -62,7 +62,7 @@ def convert(im, mapping, ratio, dither):
             offsets[i+width] += error * (5 / 16)
         else:
             char = mapping[px][1]
-        text[-1].extend([char] * int(chars))
+        text[-1].extend(char * int(chars))
     return "\n".join("".join(l) for l in text)
 
 def to_image(text, font, invert, spacing):
