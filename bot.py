@@ -60,7 +60,7 @@ async def _ascii(
     dither: Optional[bool] = True,
     invert: Optional[bool] = False,
     out_text: Optional[bool] = False,
-    url=None, font="Consolas",
+    url=None, font="Inconsolata",
     *, charset=string.ascii_letters + string.punctuation + string.digits + " "
 ):
     font = ascii.get_font(font)
