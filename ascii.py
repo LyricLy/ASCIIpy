@@ -46,6 +46,7 @@ def convert(im, mapping, ratio, dither):
     offsets = defaultdict(int)
     for i, px in enumerate(im.convert(mode="L").getdata()):
         if i % width == 0:
+            c = 0
             text.append([])
         c += ratio
         chars, c = divmod(c, 1)
