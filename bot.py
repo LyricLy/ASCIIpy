@@ -17,7 +17,12 @@ from PIL import Image
 if not os.getcwd().endswith("ASCIIpy"):
     os.chdir(os.path.dirname(__file__))
 
-bot = commands.Bot(command_prefix="@")
+intents = discord.Intents(
+    guilds=True,
+    messages=True,
+    message_content=True,
+)
+bot = commands.Bot(command_prefix="@", intents=intents)
 
 
 @bot.event
