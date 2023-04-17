@@ -22,7 +22,7 @@ intents = discord.Intents(
     messages=True,
     message_content=True,
 )
-bot = commands.Bot(command_prefix="@", intents=intents)
+bot = commands.Bot(command_prefix="#", intents=intents)
 
 
 @bot.event
